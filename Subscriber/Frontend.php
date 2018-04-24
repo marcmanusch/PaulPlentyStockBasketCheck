@@ -4,7 +4,6 @@ namespace PaulPlentyStockBasketCheck\Subscriber;
 
 use Enlight\Event\SubscriberInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
-use PaulPlentyStockBasketCheck\ApiClient\Client;
 
 
 class Frontend implements SubscriberInterface
@@ -28,14 +27,14 @@ class Frontend implements SubscriberInterface
     public static function getSubscribedEvents()
     {
         return [
-            'Enlight_Controller_Action_PostDispatchSecure_Frontend' => 'onAddBasket',
+            'Enlight_Controller_Action_PostDispatchSecure_Frontend' => 'onFrontendPostDispatch'
         ];
     }
 
     /**
      * @param \Enlight_Event_EventArgs $args
      */
-    public function onAddBasket(\Enlight_Event_EventArgs $args)
+    public function onFrontendPostDispatch(\Enlight_Event_EventArgs $args)
     {
         /** @var $controller \Enlight_Controller_Action */
         $controller = $args->getSubject();
@@ -43,25 +42,8 @@ class Frontend implements SubscriberInterface
         $view->addTemplateDir($this->container->getParameter('paul_plenty_stock_basket_check.plugin_dir') . '/Resources/Views');
         $config = $this->container->get('shopware.plugin.config_reader')->getByPluginName('PaulPlentyStockBasketCheck');
 
-        // get plugin settings
-        $paulActive = $config['active'];
-        $paulServer = $config['server'];
-        $paulUser = $config['user'];
-        $paulPass = $config['pass'];
+        $session = $this->container->get('session');
+        $view->assign('paulDebug', $session->get('paulCheckStock'));
 
-        $mpn = 'PGVMSTAND';
-
-        $params = array(
-            'numberExact' => $mpn
-        );
-
-        if($paulActive) {
-
-            $client = new Client($paulUser, $paulPass, $paulServer);
-
-            $response = $client->call('GET', '/rest/items/variations/', $params);
-            echo var_dump($response);
-
-        }
     }
 }
